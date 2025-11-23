@@ -34,14 +34,20 @@ class Task(db.Model):
     lon = db.Column(db.Float)
     urgency = db.Column(db.Integer)
     status = db.Column(db.String, default="pending")
-    created_at = db.Column(db.String, default=lambda: datetime.now(timezone.utc).isoformat())
+    created_at = db.Column(
+        db.String,
+        default=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer)
     resource_id = db.Column(db.Integer)
     eta_minutes = db.Column(db.Integer)
-    assigned_at = db.Column(db.String, default=lambda: datetime.now(timezone.utc).isoformat())
+    assigned_at = db.Column(
+        db.String,
+        default=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
 # ----------------- UTILS -----------------
 def haversine(lat1, lon1, lat2, lon2):
@@ -55,6 +61,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
 # ----------------- INITIAL DB -----------------
 def init_db(seed=True):
+    """Create tables and seed data the first time."""
     with app.app_context():
         first = not os.path.exists(BASE_DB)
         db.create_all()
@@ -68,6 +75,9 @@ def seed_data():
         Resource(name="Team C", type="emergency",   lat=17.440, lon=78.430, capacity=1),
     ])
     db.session.commit()
+
+# ✅ IMPORTANT: ensure DB is initialized even under gunicorn on Render
+init_db(seed=True)
 
 # ----------------- SCHEDULER -----------------
 def current_load(res_id):
@@ -172,8 +182,8 @@ def run_scheduler():
     out = greedy_scheduler()
     return jsonify({"assigned": out, "count": len(out)})
 
-# ----------------- RUN -----------------
+# ----------------- RUN (local only) -----------------
 if __name__ == "__main__":
-    init_db()
+    # For local testing; on Render gunicorn will ignore this block
     print("Backend running on http://127.0.0.1:5000")
     app.run(debug=True)
